@@ -7,6 +7,7 @@ import (
 	"net"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 type Game struct {
@@ -14,6 +15,7 @@ type Game struct {
 	joins   chan net.Conn
 	Answers []string
 	Stats   map[string]int
+	Mutex   sync.RWMutex
 }
 
 func (game *Game) JoinConnection(connection net.Conn) {
@@ -90,6 +92,8 @@ func (game *Game) GenerateResponse(move string) string {
 	case move == "STATS":
 		return game.printStats()
 	case game.IsGameMove(move):
+		game.Mutex.Lock()
+		defer game.Mutex.Unlock()
 		return game.generateMoveAnswer(move)
 	case move == "QUIT":
 		return "Until then stranger"
@@ -103,6 +107,7 @@ func newGame() *Game {
 		joins:   make(chan net.Conn),
 		Answers: []string{"ROCK", "PAPER", "SCISSORS"},
 		Stats:   map[string]int{"W": 0, "D": 0, "L": 0},
+		Mutex:   sync.RWMutex{},
 	}
 	game.Listen()
 	return game
