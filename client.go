@@ -7,6 +7,7 @@ import (
 	"strings"
 )
 
+// This was not a part of the exe
 func ClinetSays(message string) {
 	fmt.Printf("[CLIENT]:", message)
 }
@@ -32,6 +33,8 @@ func receiveMessage(channel chan string) bool {
 func client() {
 	fmt.Println("[SERVER]:", "<wait for connection on TCP port 1983>")
 	c, err := net.Dial("tcp", "127.0.0.1:1983")
+	// There is no need for channels and goroutines here. The client can be
+	// completely synchronous. Keep it simple, soldier!
 	channel := make(chan string)
 	reader := bufio.NewReader(c)
 	if err != nil {
@@ -65,5 +68,6 @@ func client() {
 }
 
 func main() {
+	// Or you could just rename 'client' to 'main' and be done with it ;)
 	client()
 }

@@ -10,6 +10,7 @@ import (
 	"sync"
 )
 
+// Comment or unexport.
 type Game struct {
 	clients []*Client
 	joins   chan net.Conn
@@ -18,11 +19,13 @@ type Game struct {
 	Mutex   sync.RWMutex
 }
 
+// Comment or unexport.
 func (game *Game) JoinConnection(connection net.Conn) {
 	client := NewClient(connection, game)
 	game.clients = append(game.clients, client)
 }
 
+// Comment or unexport.
 func (game *Game) Listen() {
 	go func() {
 		for {
@@ -34,15 +37,22 @@ func (game *Game) Listen() {
 	}()
 }
 
+// Comment or unexport.
 func (game *Game) IsGameMove(move string) bool {
+	// You don't need this variable at all.
 	isGameMove := false
 	for _, answer := range game.Answers {
 		if answer == move {
+			// You could return `true` here.
 			isGameMove = true
 		}
 	}
+	// ...and `false` here.
 	return isGameMove
 }
+
+// Comment or unexport.
+// This is close coupling - the method does two things at the same time.
 func (game *Game) SaveStats(answer string, move string) string {
 	switch {
 	case answer == move:
@@ -75,6 +85,7 @@ func (game *Game) printStats() string {
 	wins := strconv.Itoa(stats["W"])
 	draws := strconv.Itoa(stats["D"])
 	losses := strconv.Itoa(stats["L"])
+	// You could handle it with simple fmt.Sprintf.
 	result := "W" + wins + " D" + draws + " L" + losses
 	return result
 }
@@ -84,6 +95,7 @@ func (game *Game) generateMoveAnswer(move string) string {
 	randomNumber := rand.Intn(count)
 	answer := game.Answers[randomNumber]
 	result := game.SaveStats(answer, move)
+	// Again, fmt.Sprintf FTW.
 	return result + " " + answer
 }
 
@@ -109,10 +121,12 @@ func newGame() *Game {
 		Stats:   map[string]int{"W": 0, "D": 0, "L": 0},
 		Mutex:   sync.RWMutex{},
 	}
+	// Is it a good idea to do things like that in a constructor?
 	game.Listen()
 	return game
 }
 
+//  You'd normally call it a Handler.
 type Client struct {
 	reader     *bufio.Reader
 	connection net.Conn
@@ -122,6 +136,9 @@ type Client struct {
 func (client *Client) Read() {
 	for {
 		message, _ := client.reader.ReadString('\n')
+		// Not a Go thing but a general programming feedback - if you
+		// inverted the condition and used an early break your code
+		// would be a bit simpler.
 		if message != "" {
 			message = strings.TrimSpace(message)
 			fmt.Println("Just read:", message)
@@ -133,6 +150,8 @@ func (client *Client) Read() {
 }
 
 func NewClient(connection net.Conn, game *Game) *Client {
+	// You should close the connection afterwards to free up the ephemeral
+	// port on your machine.
 	reader := bufio.NewReader(connection)
 
 	client := &Client{
@@ -140,7 +159,6 @@ func NewClient(connection net.Conn, game *Game) *Client {
 		connection: connection,
 		game:       game,
 	}
-
 	go client.Read()
 	return client
 }
@@ -161,6 +179,8 @@ func main() {
 			fmt.Println(err)
 			return
 		}
+		// This is probably an overkill - you could start the goroutine
+		// directly here, without even touching channels.
 		game.joins <- connection
 	}
 
